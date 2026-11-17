@@ -1,0 +1,1758 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nusantara Arcade Hub - 10 Mini Games</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Orbitron:wght@600;700;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome untuk Ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        arcade: ['Orbitron', 'sans-serif'],
+                    },
+                    colors: {
+                        arcade: {
+                            bg: '#090913',
+                            card: '#131426',
+                            border: '#252746',
+                            purple: '#9333ea',
+                            cyan: '#06b6d4',
+                            gold: '#eab308',
+                            pink: '#ec4899'
+                        }
+                    },
+                    animation: {
+                        'pulse-glow': 'pulseGlow 2s infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        pulseGlow: {
+                            '0%, 100%': { boxShadow: '0 0 15px rgba(147, 51, 234, 0.4)' },
+                            '50%': { boxShadow: '0 0 25px rgba(6, 182, 212, 0.7)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-6px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #090913;
+            color: #f8fafc;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #090913; }
+        ::-webkit-scrollbar-thumb { background: #252746; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #9333ea; }
+        
+        .neon-text-purple { text-shadow: 0 0 10px rgba(168, 85, 247, 0.8); }
+        .neon-text-cyan { text-shadow: 0 0 10px rgba(34, 211, 238, 0.8); }
+        .neon-text-gold { text-shadow: 0 0 10px rgba(250, 204, 21, 0.8); }
+        
+        .glass-panel {
+            background: rgba(19, 20, 38, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Animasi Kartu Memori */
+        .memory-card { perspective: 1000px; }
+        .memory-inner {
+            transition: transform 0.4s;
+            transform-style: preserve-3d;
+        }
+        .memory-card.flipped .memory-inner { transform: rotateY(180deg); }
+        .memory-front, .memory-back {
+            backface-visibility: hidden;
+            position: absolute;
+            inset: 0;
+        }
+        .memory-back { transform: rotateY(180deg); }
+
+        /* Animasi Tikus */
+        .mole-hole { overflow: hidden; position: relative; }
+        .mole-sprite {
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transform: translateY(100%);
+        }
+        .mole-hole.active .mole-sprite { transform: translateY(5%); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-[#181936] via-[#090913] to-[#05050a]">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-20 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-xs w-full"></div>
+
+    <!-- Navbar Header -->
+    <header class="sticky top-0 z-40 glass-panel border-b border-arcade-border px-4 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+            <!-- Logo -->
+            <div class="flex items-center gap-3 cursor-pointer" onclick="app.goHome()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                    <i class="fa-solid fa-gamepad text-white text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-arcade font-bold text-lg sm:text-xl tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-cyan-300 to-amber-300">
+                        ARCADE HUB
+                    </h1>
+                    <p class="text-[10px] text-slate-400 tracking-widest uppercase">10 Mini-Games & Cloud Save</p>
+                </div>
+            </div>
+
+            <!-- Stats & Controls -->
+            <div class="flex items-center gap-2 sm:gap-4">
+                <!-- Tombol Suara -->
+                <button id="btn-sound" onclick="sound.toggle()" class="w-9 h-9 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-cyan-400 transition" title="Suara Efek">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+
+                <!-- Koin Pemain -->
+                <div class="flex items-center gap-2 bg-slate-900/90 border border-amber-500/30 px-3 py-1.5 rounded-xl">
+                    <i class="fa-solid fa-coins text-amber-400 animate-pulse"></i>
+                    <span id="nav-coins" class="font-arcade font-bold text-amber-300 text-sm sm:text-base">0</span>
+                </div>
+
+                <!-- Level Pemain -->
+                <div class="hidden sm:flex items-center gap-2 bg-slate-900/90 border border-purple-500/30 px-3 py-1.5 rounded-xl">
+                    <i class="fa-solid fa-bolt text-purple-400"></i>
+                    <span class="text-xs text-slate-400">LVL</span>
+                    <span id="nav-level" class="font-arcade font-bold text-purple-300 text-sm">1</span>
+                </div>
+
+                <!-- Profil / Edit Nama -->
+                <button onclick="app.openProfileModal()" class="flex items-center gap-2 bg-gradient-to-r from-purple-600/20 to-cyan-600/20 hover:from-purple-600/40 hover:to-cyan-600/40 border border-purple-500/40 px-3 py-1.5 rounded-xl transition">
+                    <div id="nav-avatar" class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold">👾</div>
+                    <span id="nav-username" class="text-xs sm:text-sm font-semibold text-white max-w-[90px] sm:max-w-[130px] truncate">Memuat...</span>
+                    <i class="fa-solid fa-pen text-[10px] text-slate-400"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-6">
+        
+        <!-- VIEW 1: LOBI UTAMA (GAME GRID & LEADERBOARD) -->
+        <div id="view-lobby" class="space-y-8">
+            
+            <!-- Hero / Dashboard Ringkasan Pemain -->
+            <section class="glass-panel rounded-2xl p-5 sm:p-6 border border-purple-500/20 relative overflow-hidden">
+                <div class="absolute -right-10 -top-10 w-48 h-48 bg-purple-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -left-10 -bottom-10 w-48 h-48 bg-cyan-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+                    <div class="space-y-2">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-medium">
+                            <span id="db-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                            <span id="db-status-text">Database Terhubung (Real-Time)</span>
+                        </div>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-white">
+                            Halo, <span id="hero-username" class="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400">Pemain</span>! 👋
+                        </h2>
+                        <p class="text-slate-400 text-sm max-w-xl">
+                            Pilih salah satu dari 10 mini-games di bawah ini. Kumpulkan skor tertinggi dan koin untuk menduduki peringkat #1 di Papan Peringkat Global!
+                        </p>
+                    </div>
+
+                    <!-- Statistik Ringkas -->
+                    <div class="grid grid-cols-3 gap-3 sm:gap-4 shrink-0">
+                        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 sm:p-4 text-center">
+                            <div class="text-xs text-slate-400 mb-1">Total Skor</div>
+                            <div id="stat-total-score" class="font-arcade font-bold text-lg sm:text-xl text-cyan-400">0</div>
+                        </div>
+                        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 sm:p-4 text-center">
+                            <div class="text-xs text-slate-400 mb-1">Total Koin</div>
+                            <div id="stat-total-coins" class="font-arcade font-bold text-lg sm:text-xl text-amber-400">0</div>
+                        </div>
+                        <div class="bg-slate-900/80 border border-slate-800 rounded-xl p-3 sm:p-4 text-center">
+                            <div class="text-xs text-slate-400 mb-1">Dimainkan</div>
+                            <div id="stat-games-played" class="font-arcade font-bold text-lg sm:text-xl text-purple-400">0x</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Layout Utama: 10 Mini Games (Kiri/Atas) & Global Leaderboard (Kanan/Bawah) -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                
+                <!-- Daftar 10 Mini Games (8 Kolom di Desktop) -->
+                <div class="lg:col-span-8 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-arcade font-bold text-lg text-white flex items-center gap-2">
+                            <i class="fa-solid fa-fire text-orange-500"></i> PILIH MINI-GAME (10)
+                        </h3>
+                        <span class="text-xs text-slate-400">Klik kartu untuk bermain</span>
+                    </div>
+
+                    <div id="games-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Kartu game dirender dinamis lewat JS -->
+                    </div>
+                </div>
+
+                <!-- Global Leaderboard (4 Kolom di Desktop) -->
+                <div class="lg:col-span-4 space-y-4 sticky top-20">
+                    <div class="glass-panel rounded-2xl border border-amber-500/20 p-5">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-arcade font-bold text-base sm:text-lg text-amber-400 flex items-center gap-2">
+                                <i class="fa-solid fa-trophy"></i> TOP 10 GLOBAL
+                            </h3>
+                            <span class="text-[11px] px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">Live</span>
+                        </div>
+                        
+                        <div id="leaderboard-list" class="space-y-2.5 max-h-[540px] overflow-y-auto pr-1">
+                            <!-- Item Leaderboard dirender dinamis -->
+                            <div class="text-center py-8 text-slate-500 text-sm">
+                                <i class="fa-solid fa-spinner fa-spin text-xl mb-2 text-purple-400"></i>
+                                <p>Memuat peringkat global...</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-slate-800 text-[11px] text-slate-400 flex justify-between items-center">
+                            <span>ID Pemain Anda:</span>
+                            <span id="footer-uid" class="font-mono text-slate-300 truncate max-w-[160px]">-</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- VIEW 2: ARENA BERMAIN GAME (ACTIVE GAME STAGE) -->
+        <div id="view-game" class="hidden space-y-4">
+            <!-- Top Bar Game -->
+            <div class="glass-panel rounded-2xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 border border-cyan-500/30">
+                <button onclick="app.goHome()" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-sm font-semibold transition border border-slate-700">
+                    <i class="fa-solid fa-arrow-left text-cyan-400"></i>
+                    <span>Kembali ke Lobi</span>
+                </button>
+
+                <div class="flex items-center gap-3">
+                    <span id="active-game-icon" class="text-2xl">🎮</span>
+                    <div>
+                        <h2 id="active-game-title" class="font-arcade font-bold text-base sm:text-lg text-white">Nama Game</h2>
+                        <p class="text-xs text-slate-400">Rekor Anda: <span id="active-game-best" class="text-amber-400 font-bold">0</span></p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <div class="bg-slate-900 px-3.5 py-1.5 rounded-xl border border-cyan-500/30 text-right">
+                        <div class="text-[10px] text-slate-400 uppercase">Skor Saat Ini</div>
+                        <div id="active-game-score" class="font-arcade font-bold text-lg text-cyan-400">0</div>
+                    </div>
+                    <button onclick="app.restartCurrentGame()" class="w-10 h-10 rounded-xl bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 text-purple-300 flex items-center justify-center transition" title="Ulangi Game">
+                        <i class="fa-solid fa-rotate-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Container Kanvas / DOM Interaktif Game -->
+            <div class="glass-panel rounded-2xl border border-slate-800 p-4 sm:p-6 min-h-[480px] flex flex-col items-center justify-center relative overflow-hidden">
+                <div id="game-stage" class="w-full max-w-3xl mx-auto flex flex-col items-center justify-center">
+                    <!-- Konten spesifik tiap game akan dirender di sini -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL: GAME OVER & SIMPAN SKOR -->
+    <div id="modal-gameover" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel border border-purple-500/40 rounded-3xl max-w-md w-full p-6 text-center space-y-5 shadow-2xl shadow-purple-900/40 transform transition-all">
+            <div id="go-badge" class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-3xl shadow-lg">
+                🏆
+            </div>
+            
+            <div>
+                <h3 id="go-title" class="font-arcade font-bold text-2xl text-white">PERMAINAN SELESAI!</h3>
+                <p id="go-subtitle" class="text-sm text-slate-400 mt-1">Skor berhasil disimpan ke database!</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 bg-slate-900/90 p-4 rounded-2xl border border-slate-800">
+                <div>
+                    <div class="text-xs text-slate-400">Skor Akhir</div>
+                    <div id="go-score" class="font-arcade font-bold text-2xl text-cyan-400">0</div>
+                </div>
+                <div>
+                    <div class="text-xs text-slate-400">Koin Didapat</div>
+                    <div id="go-coins" class="font-arcade font-bold text-2xl text-amber-400">+0</div>
+                </div>
+            </div>
+
+            <div id="go-new-record" class="hidden py-2 px-3 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 text-xs font-bold animate-bounce">
+                🎉 REKOR TERTINGGI BARU UNTUK GAME INI!
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button onclick="app.closeGameOverModal(); app.goHome();" class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold text-sm transition">
+                    Ke Lobi
+                </button>
+                <button onclick="app.closeGameOverModal(); app.restartCurrentGame();" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold text-sm shadow-lg shadow-purple-600/30 transition">
+                    Main Lagi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT PROFIL PEMAIN -->
+    <div id="modal-profile" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="glass-panel border border-cyan-500/40 rounded-3xl max-w-md w-full p-6 space-y-5">
+            <div class="flex items-center justify-between">
+                <h3 class="font-arcade font-bold text-lg text-white">PROFIL PEMAIN</h3>
+                <button onclick="app.closeProfileModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-2">Pilih Avatar</label>
+                    <div id="avatar-picker" class="grid grid-cols-6 gap-2">
+                        <!-- Avatar buttons -->
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Nama Pengguna (Tampil di Leaderboard)</label>
+                    <input type="text" id="input-username" maxlength="18" placeholder="Masukkan nama panggilan..." class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 focus:border-cyan-400 focus:outline-none text-white text-sm">
+                </div>
+
+                <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800 text-xs text-slate-400 space-y-1">
+                    <div class="flex justify-between">
+                        <span>Status Sinkronisasi:</span>
+                        <span class="text-emerald-400 font-semibold">Otomatis ke Cloud</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>User ID:</span>
+                        <span id="modal-uid" class="font-mono text-slate-300">...</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="app.saveProfile()" class="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-bold text-sm transition shadow-lg">
+                Simpan Profil
+            </button>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT: FIREBASE, SOUND ENGINE, & 10 MINI GAMES -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ==========================================
+        // 1. WEB AUDIO API SOUND SYNTHESIZER
+        // ==========================================
+        class SoundEngine {
+            constructor() {
+                this.enabled = true;
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+            toggle() {
+                this.enabled = !this.enabled;
+                const btn = document.getElementById('btn-sound');
+                btn.innerHTML = this.enabled ? '<i class="fa-solid fa-volume-high"></i>' : '<i class="fa-solid fa-volume-xmark text-slate-500"></i>';
+                if (this.enabled) this.play('click');
+            }
+            play(type) {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                if (type === 'click') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(300, now + 0.08);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'point') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(523.25, now); // C5
+                    osc.frequency.setValueAtTime(783.99, now + 0.07); // G5
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                    osc.start(now);
+                    osc.stop(now + 0.2);
+                } else if (type === 'win') {
+                    osc.type = 'square';
+                    [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                        osc.frequency.setValueAtTime(freq, now + i * 0.09);
+                    });
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+                    osc.start(now);
+                    osc.stop(now + 0.45);
+                } else if (type === 'lose' || type === 'boom') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(55, now + 0.35);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } else if (type === 'jump') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(280, now);
+                    osc.frequency.exponentialRampToValueAtTime(560, now + 0.12);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                }
+            }
+        }
+        window.sound = new SoundEngine();
+
+        // ==========================================
+        // 2. KONFIGURASI KATALOG 10 MINI GAMES
+        // ==========================================
+        const GAMES_CATALOG = [
+            { id: 'snake', title: 'Ular Neon', icon: '🐍', color: 'from-emerald-500 to-cyan-500', desc: 'Kumpulkan energi neon & tumbuh panjang tanpa menabrak!' },
+            { id: 'guess', title: 'Tebak Angka', icon: '🔢', color: 'from-blue-500 to-indigo-500', desc: 'Tebak angka rahasia 1-100 dengan petunjuk panas & dingin.' },
+            { id: 'rps', title: 'Batu Gunting Kertas', icon: '✌️', color: 'from-pink-500 to-rose-500', desc: 'Duel suit Jepang Best of 5 melawan AI cerdas!' },
+            { id: 'catcher', title: 'Tangkap Bintang', icon: '🌟', color: 'from-amber-400 to-orange-500', desc: 'Tangkap hujan bintang emas dan hindari bom meteor!' },
+            { id: 'memory', title: 'Memori Kartu', icon: '🃏', color: 'from-purple-500 to-fuchsia-500', desc: 'Uji daya ingatmu mencocokkan semua pasangan emoji.' },
+            { id: 'whack', title: 'Pukul Tikus', icon: '🔨', color: 'from-red-500 to-amber-600', desc: 'Refleks cepat! Pukul tikus yang muncul sebelum kabur.' },
+            { id: 'tictactoe', title: 'Tic-Tac-Toe', icon: '❌', color: 'from-cyan-500 to-blue-600', desc: 'Kalahkan AI tak terkalahkan di papan strategi 3x3.' },
+            { id: 'trivia', title: 'Kuis Kilat', icon: '🧠', color: 'from-violet-500 to-purple-700', desc: 'Jawab pertanyaan pengetahuan umum dalam 10 detik!' },
+            { id: 'flappy', title: 'Flappy Roket', icon: '🚀', color: 'from-orange-500 to-red-600', desc: 'Terbangkan roket melewati celah asteroid luar angkasa.' },
+            { id: 'typing', title: 'Ketik Cepat', icon: '⌨️', color: 'from-teal-400 to-emerald-600', desc: 'Ketik kata bahasa Indonesia secepat kilat dalam 30 detik.' }
+        ];
+
+        const AVATARS = ['👾', '🤖', '🦊', '🐯', '🐉', '🚀', '⚡', '👑', '🥷', '🧙‍♂️', '🦄', '🐼'];
+
+        // ==========================================
+        // 3. STATE & DATABASE FIRESTORE MANAGER
+        // ==========================================
+        class ArcadeApp {
+            constructor() {
+                this.db = null;
+                this.auth = null;
+                this.user = null;
+                this.appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                this.selectedAvatar = '👾';
+                
+                // Profil Default
+                this.profile = {
+                    username: 'Pemain_' + Math.floor(1000 + Math.random() * 9000),
+                    avatar: '👾',
+                    coins: 0,
+                    totalScore: 0,
+                    gamesPlayed: 0,
+                    highScores: {}
+                };
+
+                this.currentGameId = null;
+                this.currentScore = 0;
+                this.activeCleanup = null; // Fungsi pembersih interval/event saat keluar game
+                this.leaderboardUnsub = null;
+            }
+
+            async init() {
+                this.renderGamesGrid();
+                this.renderAvatarPicker();
+                this.updateProfileUI();
+
+                try {
+                    if (typeof __firebase_config !== 'undefined') {
+                        const firebaseConfig = JSON.parse(__firebase_config);
+                        const fbApp = initializeApp(firebaseConfig);
+                        this.auth = getAuth(fbApp);
+                        this.db = getFirestore(fbApp);
+
+                        // Auth terlebih dahulu sebelum query Firestore (RULE 3)
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(this.auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(this.auth);
+                        }
+
+                        onAuthStateChanged(this.auth, async (user) => {
+                            if (user) {
+                                this.user = user;
+                                document.getElementById('footer-uid').textContent = user.uid;
+                                document.getElementById('modal-uid').textContent = user.uid;
+                                await this.loadOrCreateUserProfile();
+                                this.listenLeaderboard();
+                            }
+                        });
+                    } else {
+                        document.getElementById('db-status-text').textContent = 'Mode Offline Lokal';
+                        document.getElementById('db-status-dot').classList.replace('bg-emerald-400', 'bg-amber-400');
+                    }
+                } catch (err) {
+                    console.error("Database Init Error:", err);
+                    document.getElementById('db-status-text').textContent = 'Mode Lokal (Koneksi Terbatas)';
+                }
+            }
+
+            // Memuat atau membuat profil pemain di Firestore (Strict Path RULE 1)
+            async loadOrCreateUserProfile() {
+                if (!this.db || !this.user) return;
+                try {
+                    const userRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'arcade_players', this.user.uid);
+                    const snap = await getDoc(userRef);
+                    if (snap.exists()) {
+                        const data = snap.data();
+                        this.profile = {
+                            username: data.username || this.profile.username,
+                            avatar: data.avatar || '👾',
+                            coins: data.coins || 0,
+                            totalScore: data.totalScore || 0,
+                            gamesPlayed: data.gamesPlayed || 0,
+                            highScores: data.highScores || {}
+                        };
+                    } else {
+                        await this.syncProfileToCloud();
+                    }
+                    this.updateProfileUI();
+                    this.renderGamesGrid();
+                } catch (err) {
+                    console.error("Load Profile Error:", err);
+                }
+            }
+
+            // Simpan profil ke Firestore
+            async syncProfileToCloud() {
+                if (!this.db || !this.user) return;
+                try {
+                    const userRef = doc(this.db, 'artifacts', this.appId, 'public', 'data', 'arcade_players', this.user.uid);
+                    await setDoc(userRef, {
+                        uid: this.user.uid,
+                        username: this.profile.username,
+                        avatar: this.profile.avatar,
+                        coins: this.profile.coins,
+                        totalScore: this.profile.totalScore,
+                        gamesPlayed: this.profile.gamesPlayed,
+                        highScores: this.profile.highScores,
+                        updatedAt: Date.now()
+                    }, { merge: true });
+                } catch (err) {
+                    console.error("Sync Error:", err);
+                }
+            }
+
+            // Real-time Listener untuk Global Leaderboard (RULE 2: fetch collection, sort in JS memory)
+            listenLeaderboard() {
+                if (!this.db || !this.user) return;
+                if (this.leaderboardUnsub) this.leaderboardUnsub();
+
+                const colRef = collection(this.db, 'artifacts', this.appId, 'public', 'data', 'arcade_players');
+                this.leaderboardUnsub = onSnapshot(colRef, (snapshot) => {
+                    const players = [];
+                    snapshot.forEach(doc => {
+                        players.push(doc.data());
+                    });
+
+                    // Urutkan berdasarkan totalScore tertinggi, lalu coins
+                    players.sort((a, b) => (b.totalScore || 0) - (a.totalScore || 0) || (b.coins || 0) - (a.coins || 0));
+                    this.renderLeaderboard(players.slice(0, 10));
+                }, (error) => {
+                    console.error("Leaderboard Snapshot Error:", error);
+                });
+            }
+
+            renderLeaderboard(topPlayers) {
+                const container = document.getElementById('leaderboard-list');
+                if (!topPlayers.length) {
+                    container.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs">Belum ada data peringkat. Jadilah yang pertama!</div>`;
+                    return;
+                }
+
+                container.innerHTML = topPlayers.map((p, idx) => {
+                    const isMe = this.user && p.uid === this.user.uid;
+                    let rankBadge = `<span class="w-6 h-6 rounded-lg bg-slate-800 text-slate-400 font-bold text-xs flex items-center justify-center">${idx + 1}</span>`;
+                    if (idx === 0) rankBadge = `<span class="w-6 h-6 rounded-lg bg-amber-500/20 border border-amber-400 text-amber-300 font-bold text-xs flex items-center justify-center">🥇</span>`;
+                    if (idx === 1) rankBadge = `<span class="w-6 h-6 rounded-lg bg-slate-400/20 border border-slate-300 text-slate-200 font-bold text-xs flex items-center justify-center">🥈</span>`;
+                    if (idx === 2) rankBadge = `<span class="w-6 h-6 rounded-lg bg-orange-600/20 border border-orange-500 text-orange-300 font-bold text-xs flex items-center justify-center">🥉</span>`;
+
+                    return `
+                        <div class="flex items-center justify-between p-2.5 rounded-xl border ${isMe ? 'bg-purple-900/30 border-purple-500/50' : 'bg-slate-900/60 border-slate-800/80'} transition">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                ${rankBadge}
+                                <span class="text-lg">${p.avatar || '👾'}</span>
+                                <div class="truncate">
+                                    <div class="text-xs sm:text-sm font-bold text-white truncate flex items-center gap-1">
+                                        ${this.escapeHTML(p.username || 'Anonim')}
+                                        ${isMe ? '<span class="text-[9px] px-1.5 py-0.2 bg-purple-600 rounded text-white">Anda</span>' : ''}
+                                    </div>
+                                    <div class="text-[11px] text-amber-400 flex items-center gap-1">
+                                        <i class="fa-solid fa-coins text-[9px]"></i> ${(p.coins || 0).toLocaleString('id-ID')}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0 pl-2">
+                                <div class="font-arcade font-bold text-xs sm:text-sm text-cyan-400">${(p.totalScore || 0).toLocaleString('id-ID')}</div>
+                                <div class="text-[10px] text-slate-500">PTS</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            updateProfileUI() {
+                const level = Math.floor((this.profile.totalScore || 0) / 500) + 1;
+                document.getElementById('nav-coins').textContent = (this.profile.coins || 0).toLocaleString('id-ID');
+                document.getElementById('nav-level').textContent = level;
+                document.getElementById('nav-username').textContent = this.profile.username;
+                document.getElementById('nav-avatar').textContent = this.profile.avatar;
+                document.getElementById('hero-username').textContent = this.profile.username;
+
+                document.getElementById('stat-total-score').textContent = (this.profile.totalScore || 0).toLocaleString('id-ID');
+                document.getElementById('stat-total-coins').textContent = (this.profile.coins || 0).toLocaleString('id-ID');
+                document.getElementById('stat-games-played').textContent = (this.profile.gamesPlayed || 0) + 'x';
+            }
+
+            renderGamesGrid() {
+                const grid = document.getElementById('games-grid');
+                grid.innerHTML = GAMES_CATALOG.map((g, index) => {
+                    const best = this.profile.highScores[g.id] || 0;
+                    return `
+                        <div onclick="app.launchGame('${g.id}')" class="group glass-panel hover:bg-slate-800/80 border border-slate-800 hover:border-purple-500/60 rounded-2xl p-4 cursor-pointer transition-all duration-200 hover:-translate-y-1 flex flex-col justify-between relative overflow-hidden">
+                            <div class="absolute top-0 right-0 px-2.5 py-1 bg-slate-900/90 border-b border-l border-slate-800 rounded-bl-xl text-[10px] font-arcade text-slate-400">
+                                #${String(index + 1).padStart(2, '0')}
+                            </div>
+                            
+                            <div class="flex items-start gap-3.5 mb-3">
+                                <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${g.color} flex items-center justify-center text-2xl shadow-lg shrink-0 group-hover:scale-110 transition-transform">
+                                    ${g.icon}
+                                </div>
+                                <div class="pr-6">
+                                    <h4 class="font-bold text-white text-base group-hover:text-cyan-300 transition">${g.title}</h4>
+                                    <p class="text-xs text-slate-400 line-clamp-2 mt-0.5">${g.desc}</p>
+                                </div>
+                            </div>
+
+                            <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
+                                <span class="text-slate-400">Rekor: <strong class="text-amber-400 font-arcade">${best.toLocaleString('id-ID')}</strong></span>
+                                <span class="text-cyan-400 font-semibold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                    Main <i class="fa-solid fa-play text-[10px]"></i>
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            // Navigasi & Siklus Hidup Game
+            launchGame(gameId) {
+                sound.play('click');
+                this.cleanupActiveGame();
+                this.currentGameId = gameId;
+                this.currentScore = 0;
+
+                const meta = GAMES_CATALOG.find(g => g.id === gameId);
+                document.getElementById('active-game-icon').textContent = meta.icon;
+                document.getElementById('active-game-title').textContent = meta.title;
+                document.getElementById('active-game-best').textContent = (this.profile.highScores[gameId] || 0).toLocaleString('id-ID');
+                document.getElementById('active-game-score').textContent = '0';
+
+                document.getElementById('view-lobby').classList.add('hidden');
+                document.getElementById('view-game').classList.remove('hidden');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                const stage = document.getElementById('game-stage');
+                stage.innerHTML = '';
+                this.activeCleanup = MiniGames[gameId](stage, this);
+            }
+
+            restartCurrentGame() {
+                if (this.currentGameId) {
+                    this.launchGame(this.currentGameId);
+                }
+            }
+
+            goHome() {
+                sound.play('click');
+                this.cleanupActiveGame();
+                this.currentGameId = null;
+                document.getElementById('view-game').classList.add('hidden');
+                document.getElementById('view-lobby').classList.remove('hidden');
+                this.renderGamesGrid();
+                this.updateProfileUI();
+            }
+
+            cleanupActiveGame() {
+                if (typeof this.activeCleanup === 'function') {
+                    try { this.activeCleanup(); } catch (e) {}
+                    this.activeCleanup = null;
+                }
+            }
+
+            setLiveScore(score) {
+                this.currentScore = Math.max(0, Math.floor(score));
+                document.getElementById('active-game-score').textContent = this.currentScore.toLocaleString('id-ID');
+            }
+
+            // Dipanggil saat game selesai untuk menyimpan hasil ke database
+            async completeGame(finalScore, customTitle = 'PERMAINAN SELESAI!') {
+                const score = Math.max(0, Math.floor(finalScore));
+                this.setLiveScore(score);
+                const coinsEarned = Math.max(5, Math.floor(score / 10));
+                const prevBest = this.profile.highScores[this.currentGameId] || 0;
+                const isNewRecord = score > prevBest && score > 0;
+
+                if (isNewRecord) {
+                    this.profile.highScores[this.currentGameId] = score;
+                    sound.play('win');
+                } else if (score > 0) {
+                    sound.play('point');
+                } else {
+                    sound.play('lose');
+                }
+
+                this.profile.coins += coinsEarned;
+                this.profile.totalScore += score;
+                this.profile.gamesPlayed += 1;
+
+                // Tampilkan Modal Game Over
+                document.getElementById('go-title').textContent = customTitle;
+                document.getElementById('go-score').textContent = score.toLocaleString('id-ID');
+                document.getElementById('go-coins').textContent = `+${coinsEarned}`;
+                
+                const recBadge = document.getElementById('go-new-record');
+                if (isNewRecord) {
+                    recBadge.classList.remove('hidden');
+                    document.getElementById('active-game-best').textContent = score.toLocaleString('id-ID');
+                } else {
+                    recBadge.classList.add('hidden');
+                }
+
+                const modal = document.getElementById('modal-gameover');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+
+                this.updateProfileUI();
+                await this.syncProfileToCloud();
+                this.showToast(`Skor ${score} & +${coinsEarned} koin disimpan ke Cloud!`, 'success');
+            }
+
+            closeGameOverModal() {
+                const modal = document.getElementById('modal-gameover');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+
+            // Modal Edit Profil
+            renderAvatarPicker() {
+                const picker = document.getElementById('avatar-picker');
+                picker.innerHTML = AVATARS.map(av => `
+                    <button type="button" onclick="app.selectAvatar('${av}')" data-av="${av}" class="avatar-opt h-10 rounded-xl bg-slate-900 border border-slate-700 hover:border-cyan-400 text-xl flex items-center justify-center transition">
+                        ${av}
+                    </button>
+                `).join('');
+            }
+
+            selectAvatar(av) {
+                sound.play('click');
+                this.selectedAvatar = av;
+                document.querySelectorAll('.avatar-opt').forEach(btn => {
+                    if (btn.dataset.av === av) {
+                        btn.classList.add('border-cyan-400', 'bg-cyan-950/50', 'scale-105');
+                    } else {
+                        btn.classList.remove('border-cyan-400', 'bg-cyan-950/50', 'scale-105');
+                    }
+                });
+            }
+
+            openProfileModal() {
+                sound.play('click');
+                document.getElementById('input-username').value = this.profile.username;
+                this.selectAvatar(this.profile.avatar);
+                const modal = document.getElementById('modal-profile');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            closeProfileModal() {
+                const modal = document.getElementById('modal-profile');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+
+            async saveProfile() {
+                const rawName = document.getElementById('input-username').value.trim();
+                if (!rawName) {
+                    this.showToast('Nama pengguna tidak boleh kosong!', 'error');
+                    return;
+                }
+                sound.play('point');
+                this.profile.username = rawName.substring(0, 18);
+                this.profile.avatar = this.selectedAvatar;
+                this.updateProfileUI();
+                this.closeProfileModal();
+                await this.syncProfileToCloud();
+                this.showToast('Profil berhasil diperbarui!', 'success');
+            }
+
+            showToast(msg, type = 'info') {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                const borderClass = type === 'success' ? 'border-emerald-500/60 text-emerald-300' : (type === 'error' ? 'border-rose-500/60 text-rose-300' : 'border-cyan-500/60 text-cyan-300');
+                toast.className = `glass-panel border ${borderClass} px-4 py-3 rounded-xl shadow-xl text-xs font-medium flex items-center gap-2.5 transform transition-all duration-300 translate-x-full`;
+                toast.innerHTML = `
+                    <i class="fa-solid ${type === 'success' ? 'fa-cloud-arrow-up text-emerald-400' : 'fa-circle-info text-cyan-400'}"></i>
+                    <span>${this.escapeHTML(msg)}</span>
+                `;
+                container.appendChild(toast);
+                requestAnimationFrame(() => toast.classList.remove('translate-x-full'));
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-x-full');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+
+            escapeHTML(str) {
+                return String(str).replace(/[&<>'"]/g, tag => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+                }[tag]));
+            }
+        }
+
+        // ==========================================
+        // 4. IMPLEMENTASI 10 MINI GAMES LENGKAP
+        // ==========================================
+        const MiniGames = {
+
+            // ------------------------------------------
+            // GAME 1: ULAR NEON (SNAKE)
+            // ------------------------------------------
+            snake(stage, app) {
+                stage.innerHTML = `
+                    <div class="flex flex-col items-center gap-4 w-full">
+                        <div class="flex items-center gap-4 text-xs text-slate-300">
+                            <span><i class="fa-solid fa-apple-whole text-pink-500"></i> +10 Poin</span>
+                            <span><i class="fa-solid fa-bolt text-amber-400"></i> Emas +30 Poin</span>
+                        </div>
+                        <canvas id="snake-canvas" width="360" height="360" class="rounded-2xl border-2 border-cyan-500/40 bg-[#070812] shadow-lg shadow-cyan-500/10 max-w-full"></canvas>
+                        <!-- Kontrol Mobile D-Pad -->
+                        <div class="grid grid-cols-3 gap-2 w-44 sm:hidden">
+                            <div></div>
+                            <button id="snk-up" class="h-12 bg-slate-800 active:bg-cyan-600 rounded-xl flex items-center justify-center text-white"><i class="fa-solid fa-arrow-up"></i></button>
+                            <div></div>
+                            <button id="snk-left" class="h-12 bg-slate-800 active:bg-cyan-600 rounded-xl flex items-center justify-center text-white"><i class="fa-solid fa-arrow-left"></i></button>
+                            <button id="snk-down" class="h-12 bg-slate-800 active:bg-cyan-600 rounded-xl flex items-center justify-center text-white"><i class="fa-solid fa-arrow-down"></i></button>
+                            <button id="snk-right" class="h-12 bg-slate-800 active:bg-cyan-600 rounded-xl flex items-center justify-center text-white"><i class="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                        <p class="text-xs text-slate-400 hidden sm:block">Gunakan tombol Panah (Arrow Keys) atau WASD untuk bergerak</p>
+                    </div>
+                `;
+
+                const canvas = document.getElementById('snake-canvas');
+                const ctx = canvas.getContext('2d');
+                const grid = 18;
+                const count = canvas.width / grid; // 20x20
+
+                let snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
+                let dx = 1, dy = 0;
+                let nextDx = 1, nextDy = 0;
+                let food = { x: 15, y: 10, golden: false };
+                let score = 0;
+                let gameOver = false;
+
+                const spawnFood = () => {
+                    food = {
+                        x: Math.floor(Math.random() * count),
+                        y: Math.floor(Math.random() * count),
+                        golden: Math.random() < 0.25
+                    };
+                    if (snake.some(s => s.x === food.x && s.y === food.y)) spawnFood();
+                };
+
+                const setDir = (nx, ny) => {
+                    if (nx !== -dx && ny !== -dy) {
+                        nextDx = nx;
+                        nextDy = ny;
+                    }
+                };
+
+                const onKey = (e) => {
+                    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+                    if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') setDir(0, -1);
+                    if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') setDir(0, 1);
+                    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') setDir(-1, 0);
+                    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') setDir(1, 0);
+                };
+                window.addEventListener('keydown', onKey);
+
+                document.getElementById('snk-up').onclick = () => setDir(0, -1);
+                document.getElementById('snk-down').onclick = () => setDir(0, 1);
+                document.getElementById('snk-left').onclick = () => setDir(-1, 0);
+                document.getElementById('snk-right').onclick = () => setDir(1, 0);
+
+                const loop = setInterval(() => {
+                    if (gameOver) return;
+                    dx = nextDx;
+                    dy = nextDy;
+
+                    const head = { x: snake[0].x + dx, y: snake[0].y + dy };
+
+                    // Cek Tabrakan Dinding atau Badan
+                    if (head.x < 0 || head.x >= count || head.y < 0 || head.y >= count || snake.some(s => s.x === head.x && s.y === head.y)) {
+                        gameOver = true;
+                        clearInterval(loop);
+                        app.completeGame(score, 'ULAR MENABRAK!');
+                        return;
+                    }
+
+                    snake.unshift(head);
+
+                    // Makan Energi
+                    if (head.x === food.x && head.y === food.y) {
+                        sound.play('point');
+                        score += food.golden ? 30 : 10;
+                        app.setLiveScore(score);
+                        spawnFood();
+                    } else {
+                        snake.pop();
+                    }
+
+                    // Gambar Grid & Objek
+                    ctx.fillStyle = '#070812';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    ctx.strokeStyle = 'rgba(37, 39, 70, 0.35)';
+                    for (let i = 0; i < count; i++) {
+                        ctx.beginPath(); ctx.moveTo(i * grid, 0); ctx.lineTo(i * grid, canvas.height); ctx.stroke();
+                        ctx.beginPath(); ctx.moveTo(0, i * grid); ctx.lineTo(canvas.width, i * grid); ctx.stroke();
+                    }
+
+                    // Gambar Makanan
+                    ctx.fillStyle = food.golden ? '#facc15' : '#ec4899';
+                    ctx.shadowColor = food.golden ? '#facc15' : '#ec4899';
+                    ctx.shadowBlur = 12;
+                    ctx.beginPath();
+                    ctx.arc(food.x * grid + grid / 2, food.y * grid + grid / 2, grid / 2.4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    // Gambar Ular
+                    snake.forEach((seg, idx) => {
+                        ctx.fillStyle = idx === 0 ? '#22d3ee' : '#0891b2';
+                        ctx.fillRect(seg.x * grid + 1, seg.y * grid + 1, grid - 2, grid - 2);
+                    });
+                }, 115);
+
+                return () => {
+                    clearInterval(loop);
+                    window.removeEventListener('keydown', onKey);
+                };
+            },
+
+            // ------------------------------------------
+            // GAME 2: TEBAK ANGKA (NUMBER GUESSER)
+            // ------------------------------------------
+            guess(stage, app) {
+                const secret = Math.floor(Math.random() * 100) + 1;
+                let attemptsLeft = 7;
+                let history = [];
+
+                stage.innerHTML = `
+                    <div class="max-w-md w-full text-center space-y-5">
+                        <div class="p-4 rounded-2xl bg-slate-900/90 border border-blue-500/30">
+                            <div class="text-xs text-blue-400 uppercase font-bold tracking-wider">Misi Detektif Angka</div>
+                            <h3 class="text-xl font-bold text-white mt-1">Tebak Angka Rahasia (1 - 100)</h3>
+                            <p class="text-xs text-slate-400 mt-1">Sisa Kesempatan: <span id="guess-lives" class="text-amber-400 font-arcade font-bold text-base">7</span></p>
+                        </div>
+
+                        <div id="guess-feedback" class="py-4 px-4 rounded-2xl bg-slate-800/60 border border-slate-700 text-sm font-semibold text-cyan-300">
+                            Masukkan tebakan pertamamu di bawah!
+                        </div>
+
+                        <form id="guess-form" class="flex gap-2">
+                            <input type="number" id="guess-input" min="1" max="100" required placeholder="1 - 100" class="flex-1 px-4 py-3 rounded-xl bg-slate-900 border border-slate-700 focus:border-cyan-400 focus:outline-none text-center font-arcade text-xl text-white">
+                            <button type="submit" class="px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 font-bold text-white shadow-lg transition">
+                                Tebak!
+                            </button>
+                        </form>
+
+                        <div id="guess-history" class="flex flex-wrap justify-center gap-2 min-h-[32px]"></div>
+                    </div>
+                `;
+
+                const form = document.getElementById('guess-form');
+                const input = document.getElementById('guess-input');
+                const feedback = document.getElementById('guess-feedback');
+                const livesEl = document.getElementById('guess-lives');
+                const histEl = document.getElementById('guess-history');
+                input.focus();
+
+                form.onsubmit = (e) => {
+                    e.preventDefault();
+                    const val = parseInt(input.value, 10);
+                    if (isNaN(val) || val < 1 || val > 100) return;
+                    input.value = '';
+                    input.focus();
+
+                    const diff = Math.abs(secret - val);
+                    attemptsLeft--;
+                    livesEl.textContent = attemptsLeft;
+
+                    if (val === secret) {
+                        const finalScore = (attemptsLeft + 1) * 50;
+                        feedback.innerHTML = `🎉 TEPAT SEKALI! Angkanya adalah <strong class="text-amber-400 text-lg">${secret}</strong>!`;
+                        app.completeGame(finalScore, 'TEBAKAN JITU!');
+                        return;
+                    }
+
+                    sound.play('click');
+                    let hint = val < secret ? 'TERLALU RENDAH ⬆️' : 'TERLALU TINGGI ⬇️';
+                    let temp = diff <= 5 ? '🔥 SANGAT PANAS!' : (diff <= 15 ? '☀️ Hangat' : '❄️ Dingin');
+                    
+                    feedback.innerHTML = `${hint} &mdash; <span class="text-amber-300">${temp}</span>`;
+                    history.push({ val, dir: val < secret ? '↑' : '↓' });
+                    histEl.innerHTML = history.map(h => `<span class="px-2.5 py-1 rounded-lg bg-slate-800 border border-slate-700 text-xs font-mono text-slate-300">${h.val} ${h.dir}</span>`).join('');
+
+                    if (attemptsLeft <= 0) {
+                        feedback.innerHTML = `😢 Kesempatan Habis! Angka rahasianya adalah <strong class="text-rose-400">${secret}</strong>.`;
+                        app.completeGame(10, 'KESEMPATAN HABIS!');
+                    }
+                };
+
+                return null;
+            },
+
+            // ------------------------------------------
+            // GAME 3: BATU GUNTING KERTAS (SUIT JEPANG)
+            // ------------------------------------------
+            rps(stage, app) {
+                let round = 1;
+                const maxRounds = 5;
+                let playerWins = 0;
+                let aiWins = 0;
+                let score = 0;
+
+                const choices = [
+                    { id: 'batu', label: 'Batu', emoji: '✊', beats: 'gunting' },
+                    { id: 'gunting', label: 'Gunting', emoji: '✌️', beats: 'kertas' },
+                    { id: 'kertas', label: 'Kertas', emoji: '✋', beats: 'batu' }
+                ];
+
+                stage.innerHTML = `
+                    <div class="max-w-lg w-full text-center space-y-6">
+                        <div class="flex justify-between items-center bg-slate-900/90 p-4 rounded-2xl border border-pink-500/30">
+                            <div class="text-left">
+                                <div class="text-xs text-slate-400">ANDA</div>
+                                <div id="rps-p-score" class="font-arcade font-bold text-2xl text-cyan-400">0</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-pink-400 font-bold">RONDE <span id="rps-round">1</span> / ${maxRounds}</div>
+                                <div class="text-[11px] text-slate-400">Best of 5</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-slate-400">AI BOT</div>
+                                <div id="rps-ai-score" class="font-arcade font-bold text-2xl text-rose-400">0</div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-center gap-8 py-4">
+                            <div id="rps-p-hand" class="w-24 h-24 rounded-2xl bg-slate-800/80 border border-cyan-500/40 flex items-center justify-center text-5xl">❔</div>
+                            <div class="font-arcade font-bold text-slate-500 text-xl">VS</div>
+                            <div id="rps-ai-hand" class="w-24 h-24 rounded-2xl bg-slate-800/80 border border-rose-500/40 flex items-center justify-center text-5xl">🤖</div>
+                        </div>
+
+                        <div id="rps-status" class="text-sm font-bold text-amber-300 min-h-[24px]">Pilih jurusmu di bawah!</div>
+
+                        <div class="grid grid-cols-3 gap-3">
+                            ${choices.map(c => `
+                                <button data-choice="${c.id}" class="rps-btn py-4 px-3 rounded-2xl bg-slate-800 hover:bg-purple-600/30 border border-slate-700 hover:border-purple-400 flex flex-col items-center gap-1 transition transform active:scale-95">
+                                    <span class="text-3xl">${c.emoji}</span>
+                                    <span class="text-xs font-bold text-white">${c.label}</span>
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                document.querySelectorAll('.rps-btn').forEach(btn => {
+                    btn.onclick = () => {
+                        if (round > maxRounds) return;
+                        const pChoice = choices.find(c => c.id === btn.dataset.choice);
+                        const aiChoice = choices[Math.floor(Math.random() * choices.length)];
+
+                        document.getElementById('rps-p-hand').textContent = pChoice.emoji;
+                        document.getElementById('rps-ai-hand').textContent = aiChoice.emoji;
+
+                        const statusEl = document.getElementById('rps-status');
+                        if (pChoice.id === aiChoice.id) {
+                            sound.play('click');
+                            statusEl.innerHTML = `<span class="text-slate-300">SERI! Keduanya memilih ${pChoice.label}</span>`;
+                            score += 20;
+                        } else if (pChoice.beats === aiChoice.id) {
+                            sound.play('point');
+                            playerWins++;
+                            score += 60;
+                            statusEl.innerHTML = `<span class="text-emerald-400">MENANG RONDE! ${pChoice.label} mengalahkan ${aiChoice.label}</span>`;
+                        } else {
+                            sound.play('lose');
+                            aiWins++;
+                            statusEl.innerHTML = `<span class="text-rose-400">KALAH RONDE! ${aiChoice.label} mengalahkan ${pChoice.label}</span>`;
+                        }
+
+                        app.setLiveScore(score);
+                        document.getElementById('rps-p-score').textContent = playerWins;
+                        document.getElementById('rps-ai-score').textContent = aiWins;
+
+                        if (round >= maxRounds) {
+                            round++;
+                            const bonus = playerWins > aiWins ? 100 : 0;
+                            const title = playerWins > aiWins ? 'KAMU JUARA SUIT!' : (playerWins === aiWins ? 'PERTANDINGAN SERI!' : 'AI MENANG!');
+                            setTimeout(() => app.completeGame(score + bonus, title), 800);
+                        } else {
+                            round++;
+                            document.getElementById('rps-round').textContent = round;
+                        }
+                    };
+                });
+
+                return null;
+            },
+
+            // ------------------------------------------
+            // GAME 4: TANGKAP BINTANG (STAR CATCHER)
+            // ------------------------------------------
+            catcher(stage, app) {
+                stage.innerHTML = `
+                    <div class="flex flex-col items-center gap-3 w-full">
+                        <div class="flex justify-between w-full max-w-[360px] text-xs font-bold">
+                            <span class="text-amber-400">🌟 Bintang: +15 Poin</span>
+                            <span class="text-rose-400">💣 Bom: Game Over!</span>
+                        </div>
+                        <canvas id="catcher-canvas" width="360" height="420" class="rounded-2xl border-2 border-amber-500/40 bg-[#070812] touch-none max-w-full cursor-pointer"></canvas>
+                        <p class="text-xs text-slate-400">Geser jari / mouse di layar atau gunakan tombol Kiri/Kanan</p>
+                    </div>
+                `;
+
+                const canvas = document.getElementById('catcher-canvas');
+                const ctx = canvas.getContext('2d');
+                let basketX = canvas.width / 2 - 35;
+                const basketW = 70;
+                const basketH = 18;
+                let items = [];
+                let score = 0;
+                let frame = 0;
+                let running = true;
+                let animId = null;
+
+                const moveBasket = (clientX) => {
+                    const rect = canvas.getBoundingClientRect();
+                    const scaleX = canvas.width / rect.width;
+                    const x = (clientX - rect.left) * scaleX;
+                    basketX = Math.max(0, Math.min(canvas.width - basketW, x - basketW / 2));
+                };
+
+                const onMouseMove = (e) => moveBasket(e.clientX);
+                const onTouchMove = (e) => { e.preventDefault(); moveBasket(e.touches[0].clientX); };
+                const onKey = (e) => {
+                    if (e.key === 'ArrowLeft') basketX = Math.max(0, basketX - 28);
+                    if (e.key === 'ArrowRight') basketX = Math.min(canvas.width - basketW, basketX + 28);
+                };
+
+                canvas.addEventListener('mousemove', onMouseMove);
+                canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+                window.addEventListener('keydown', onKey);
+
+                const update = () => {
+                    if (!running) return;
+                    frame++;
+                    ctx.fillStyle = '#070812';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Spawn item tiap 35 frame
+                    if (frame % 32 === 0) {
+                        const isBomb = Math.random() < 0.28;
+                        items.push({
+                            x: Math.random() * (canvas.width - 24) + 12,
+                            y: -20,
+                            speed: 3 + Math.min(4, score / 150) + Math.random() * 1.5,
+                            isBomb
+                        });
+                    }
+
+                    // Gambar Keranjang Neon
+                    ctx.fillStyle = '#22d3ee';
+                    ctx.shadowColor = '#22d3ee';
+                    ctx.shadowBlur = 10;
+                    ctx.beginPath();
+                    ctx.roundRect(basketX, canvas.height - 32, basketW, basketH, 8);
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+
+                    // Update & Gambar Item Jatuh
+                    ctx.font = '24px serif';
+                    ctx.textAlign = 'center';
+                    for (let i = items.length - 1; i >= 0; i--) {
+                        const it = items[i];
+                        it.y += it.speed;
+                        ctx.fillText(it.isBomb ? '💣' : '🌟', it.x, it.y);
+
+                        // Cek Tangkap
+                        if (it.y >= canvas.height - 36 && it.y <= canvas.height - 10 && it.x >= basketX - 10 && it.x <= basketX + basketW + 10) {
+                            if (it.isBomb) {
+                                running = false;
+                                sound.play('boom');
+                                app.completeGame(score, 'TERKENA BOM METEOR!');
+                                return;
+                            } else {
+                                sound.play('point');
+                                score += 15;
+                                app.setLiveScore(score);
+                                items.splice(i, 1);
+                                continue;
+                            }
+                        }
+
+                        if (it.y > canvas.height + 20) items.splice(i, 1);
+                    }
+
+                    animId = requestAnimationFrame(update);
+                };
+
+                animId = requestAnimationFrame(update);
+
+                return () => {
+                    running = false;
+                    cancelAnimationFrame(animId);
+                    canvas.removeEventListener('mousemove', onMouseMove);
+                    canvas.removeEventListener('touchmove', onTouchMove);
+                    window.removeEventListener('keydown', onKey);
+                };
+            },
+
+            // ------------------------------------------
+            // GAME 5: MEMORI KARTU (MEMORY MATCH)
+            // ------------------------------------------
+            memory(stage, app) {
+                const icons = ['🚀', '👾', '💎', '🔥', '⚡', '👑', '🍀', '🎯'];
+                let deck = [...icons, ...icons].sort(() => Math.random() - 0.5);
+                let flipped = [];
+                let matchedCount = 0;
+                let moves = 0;
+                let lock = false;
+
+                stage.innerHTML = `
+                    <div class="max-w-md w-full space-y-4 text-center">
+                        <div class="flex justify-between items-center bg-slate-900/90 px-4 py-2.5 rounded-xl border border-purple-500/30 text-xs">
+                            <span>Langkah: <strong id="mem-moves" class="text-cyan-400 font-arcade">0</strong></span>
+                            <span>Cocok: <strong id="mem-matched" class="text-emerald-400 font-arcade">0 / 8</strong></span>
+                        </div>
+                        <div id="mem-grid" class="grid grid-cols-4 gap-2.5 sm:gap-3">
+                            ${deck.map((icon, idx) => `
+                                <div data-idx="${idx}" data-icon="${icon}" class="memory-card aspect-square cursor-pointer">
+                                    <div class="memory-inner w-full h-full relative">
+                                        <div class="memory-front rounded-xl bg-gradient-to-br from-purple-700/60 to-slate-800 border border-purple-500/40 flex items-center justify-center text-xl text-purple-300 font-bold">?</div>
+                                        <div class="memory-back rounded-xl bg-slate-900 border-2 border-cyan-400 flex items-center justify-center text-3xl shadow-lg">${icon}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                document.querySelectorAll('.memory-card').forEach(card => {
+                    card.onclick = () => {
+                        if (lock || card.classList.contains('flipped') || card.classList.contains('matched')) return;
+                        sound.play('click');
+                        card.classList.add('flipped');
+                        flipped.push(card);
+
+                        if (flipped.length === 2) {
+                            moves++;
+                            document.getElementById('mem-moves').textContent = moves;
+                            const [c1, c2] = flipped;
+
+                            if (c1.dataset.icon === c2.dataset.icon) {
+                                sound.play('point');
+                                c1.classList.add('matched');
+                                c2.classList.add('matched');
+                                matchedCount++;
+                                document.getElementById('mem-matched').textContent = `${matchedCount} / 8`;
+                                flipped = [];
+                                app.setLiveScore(matchedCount * 40);
+
+                                if (matchedCount === 8) {
+                                    const efficiencyBonus = Math.max(50, 300 - (moves - 8) * 15);
+                                    setTimeout(() => app.completeGame(320 + efficiencyBonus, 'MEMORI SEMPURNA!'), 500);
+                                }
+                            } else {
+                                lock = true;
+                                setTimeout(() => {
+                                    c1.classList.remove('flipped');
+                                    c2.classList.remove('flipped');
+                                    flipped = [];
+                                    lock = false;
+                                }, 700);
+                            }
+                        }
+                    };
+                });
+
+                return null;
+            },
+
+            // ------------------------------------------
+            // GAME 6: PUKUL TIKUS (WHACK-A-MOLE)
+            // ------------------------------------------
+            whack(stage, app) {
+                let score = 0;
+                let timeLeft = 25;
+                let activeHole = -1;
+
+                stage.innerHTML = `
+                    <div class="max-w-md w-full space-y-5 text-center">
+                        <div class="flex justify-between items-center bg-slate-900/90 px-4 py-3 rounded-xl border border-amber-500/30">
+                            <span class="text-xs text-slate-400">Waktu: <strong id="whack-time" class="text-rose-400 font-arcade text-base">25s</strong></span>
+                            <span class="text-xs text-amber-300 font-bold">Ketuk Tikus secepatnya!</span>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-3 sm:gap-4">
+                            ${Array.from({ length: 9 }).map((_, i) => `
+                                <div data-hole="${i}" class="mole-hole aspect-square rounded-2xl bg-slate-900 border-2 border-slate-800 flex items-end justify-center cursor-pointer active:scale-95 transition">
+                                    <div class="mole-sprite text-5xl sm:text-6xl pb-2 select-none pointer-events-none">🐹</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                const holes = document.querySelectorAll('.mole-hole');
+                holes.forEach(h => {
+                    h.onclick = () => {
+                        const idx = parseInt(h.dataset.hole, 10);
+                        if (idx === activeHole) {
+                            sound.play('point');
+                            score += 20;
+                            app.setLiveScore(score);
+                            h.classList.remove('active');
+                            activeHole = -1;
+                        }
+                    };
+                });
+
+                const popTimer = setInterval(() => {
+                    holes.forEach(h => h.classList.remove('active'));
+                    const next = Math.floor(Math.random() * 9);
+                    activeHole = next;
+                    holes[next].classList.add('active');
+                }, 680);
+
+                const clockTimer = setInterval(() => {
+                    timeLeft--;
+                    document.getElementById('whack-time').textContent = timeLeft + 's';
+                    if (timeLeft <= 0) {
+                        clearInterval(popTimer);
+                        clearInterval(clockTimer);
+                        app.completeGame(score, 'WAKTU HABIS!');
+                    }
+                }, 1000);
+
+                return () => {
+                    clearInterval(popTimer);
+                    clearInterval(clockTimer);
+                };
+            },
+
+            // ------------------------------------------
+            // GAME 7: TIC-TAC-TOE (XOX VS AI)
+            // ------------------------------------------
+            tictactoe(stage, app) {
+                let board = Array(9).fill(null);
+                let gameActive = true;
+
+                stage.innerHTML = `
+                    <div class="max-w-sm w-full text-center space-y-5">
+                        <div class="bg-slate-900/90 p-3 rounded-xl border border-cyan-500/30">
+                            <div id="ttt-status" class="text-sm font-bold text-cyan-300">Giliranmu (❌) &mdash; Lawan AI (⭕)</div>
+                        </div>
+
+                        <div id="ttt-board" class="grid grid-cols-3 gap-2.5">
+                            ${Array.from({ length: 9 }).map((_, i) => `
+                                <button data-cell="${i}" class="ttt-cell aspect-square rounded-2xl bg-slate-900 hover:bg-slate-800 border-2 border-slate-700 font-arcade text-4xl flex items-center justify-center transition"></button>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+
+                const winLines = [
+                    [0,1,2], [3,4,5], [6,7,8],
+                    [0,3,6], [1,4,7], [2,5,8],
+                    [0,4,8], [2,4,6]
+                ];
+
+                const checkWinner = (b) => {
+                    for (const [a, c, d] of winLines) {
+                        if (b[a] && b[a] === b[c] && b[a] === b[d]) return b[a];
+                    }
+                    return b.includes(null) ? null : 'TIE';
+                };
+
+                const aiMove = () => {
+                    // AI mencari langkah menang atau blokir pemain
+                    const empty = board.map((v, i) => v === null ? i : null).filter(v => v !== null);
+                    if (!empty.length) return;
+
+                    // 1. Cek AI bisa menang
+                    for (const idx of empty) {
+                        board[idx] = 'O';
+                        if (checkWinner(board) === 'O') return idx;
+                        board[idx] = null;
+                    }
+                    // 2. Cek blokir pemain
+                    for (const idx of empty) {
+                        board[idx] = 'X';
+                        if (checkWinner(board) === 'X') { board[idx] = null; return idx; }
+                        board[idx] = null;
+                    }
+                    // 3. Ambil tengah atau acak
+                    if (empty.includes(4)) return 4;
+                    return empty[Math.floor(Math.random() * empty.length)];
+                };
+
+                const cells = document.querySelectorAll('.ttt-cell');
+                cells.forEach(cell => {
+                    cell.onclick = () => {
+                        const idx = parseInt(cell.dataset.cell, 10);
+                        if (!gameActive || board[idx]) return;
+
+                        sound.play('click');
+                        board[idx] = 'X';
+                        cell.textContent = '❌';
+
+                        let res = checkWinner(board);
+                        if (res) {
+                            gameActive = false;
+                            const pts = res === 'X' ? 200 : 50;
+                            app.completeGame(pts, res === 'X' ? 'KAMU MENGALAHKAN AI!' : 'PERTANDINGAN SERI!');
+                            return;
+                        }
+
+                        // Giliran AI
+                        gameActive = false;
+                        document.getElementById('ttt-status').textContent = 'AI sedang berpikir...';
+                        setTimeout(() => {
+                            const move = aiMove();
+                            if (move !== undefined) {
+                                board[move] = 'O';
+                                cells[move].textContent = '⭕';
+                            }
+                            res = checkWinner(board);
+                            if (res) {
+                                const pts = res === 'O' ? 20 : 50;
+                                app.completeGame(pts, res === 'O' ? 'AI MENANG!' : 'PERTANDINGAN SERI!');
+                            } else {
+                                gameActive = true;
+                                document.getElementById('ttt-status').textContent = 'Giliranmu (❌)';
+                            }
+                        }, 350);
+                    };
+                });
+
+                return null;
+            },
+
+            // ------------------------------------------
+            // GAME 8: KUIS KILAT (SPEED TRIVIA)
+            // ------------------------------------------
+            trivia(stage, app) {
+                const questions = [
+                    { q: 'Planet terdekat dari Matahari adalah?', opts: ['Venus', 'Merkurius', 'Mars', 'Bumi'], a: 1 },
+                    { q: 'Berapa hasil dari 15 x 6 + 10?', opts: ['90', '100', '110', '85'], a: 1 },
+                    { q: 'Ibukota negara Jepang adalah?', opts: ['Osaka', 'Kyoto', 'Tokyo', 'Seoul'], a: 2 },
+                    { q: 'Unsur kimia dengan simbol "O" adalah?', opts: ['Emas', 'Oksigen', 'Osmium', 'Perak'], a: 1 },
+                    { q: 'Benua terbesar di dunia adalah?', opts: ['Afrika', 'Amerika', 'Asia', 'Eropa'], a: 2 },
+                    { q: 'Hewan tercepat di darat adalah?', opts: ['Singa', 'Cheetah', 'Kuda', 'Elang'], a: 1 },
+                    { q: 'Ada berapa warna dalam pelangi?', opts: ['5', '6', '7', '8'], a: 2 }
+                ].sort(() => Math.random() - 0.5).slice(0, 5);
+
+                let qIdx = 0;
+                let score = 0;
+                let timeLeft = 10;
+                let timer = null;
+
+                const renderQuestion = () => {
+                    if (qIdx >= questions.length) {
+                        clearInterval(timer);
+                        app.completeGame(score, 'KUIS SELESAI!');
+                        return;
+                    }
+                    timeLeft = 10;
+                    const item = questions[qIdx];
+                    stage.innerHTML = `
+                        <div class="max-w-lg w-full space-y-5">
+                            <div class="flex justify-between items-center bg-slate-900/90 px-4 py-3 rounded-xl border border-purple-500/30 text-xs">
+                                <span class="text-purple-300 font-bold">Soal ${qIdx + 1} dari ${questions.length}</span>
+                                <span class="text-amber-400 font-arcade text-sm">⏱️ <span id="triv-time">10</span>s</span>
+                            </div>
+
+                            <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800 text-center">
+                                <h3 class="text-base sm:text-lg font-bold text-white">${item.q}</h3>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                ${item.opts.map((opt, idx) => `
+                                    <button data-opt="${idx}" class="triv-opt py-3.5 px-4 rounded-xl bg-slate-800 hover:bg-purple-600/30 border border-slate-700 hover:border-purple-400 text-sm font-semibold text-white text-left transition">
+                                        <span class="text-cyan-400 font-arcade mr-2">${['A','B','C','D'][idx]}.</span> ${opt}
+                                    </button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+
+                    document.querySelectorAll('.triv-opt').forEach(btn => {
+                        btn.onclick = () => {
+                            clearInterval(timer);
+                            const chosen = parseInt(btn.dataset.opt, 10);
+                            if (chosen === item.a) {
+                                sound.play('point');
+                                score += 50 + (timeLeft * 5);
+                                app.setLiveScore(score);
+                                btn.classList.add('bg-emerald-600/40', 'border-emerald-400');
+                            } else {
+                                sound.play('lose');
+                                btn.classList.add('bg-rose-600/40', 'border-rose-400');
+                            }
+                            qIdx++;
+                            setTimeout(renderQuestion, 550);
+                        };
+                    });
+
+                    clearInterval(timer);
+                    timer = setInterval(() => {
+                        timeLeft--;
+                        const el = document.getElementById('triv-time');
+                        if (el) el.textContent = timeLeft;
+                        if (timeLeft <= 0) {
+                            clearInterval(timer);
+                            sound.play('lose');
+                            qIdx++;
+                            renderQuestion();
+                        }
+                    }, 1000);
+                };
+
+                renderQuestion();
+                return () => clearInterval(timer);
+            },
+
+            // ------------------------------------------
+            // GAME 9: FLAPPY ROKET (FLAPPY ROCKET)
+            // ------------------------------------------
+            flappy(stage, app) {
+                stage.innerHTML = `
+                    <div class="flex flex-col items-center gap-3 w-full">
+                        <canvas id="flappy-canvas" width="360" height="420" class="rounded-2xl border-2 border-orange-500/40 bg-[#070812] max-w-full cursor-pointer touch-none"></canvas>
+                        <p class="text-xs text-slate-400">Klik / Tap layar atau tekan SPASI untuk dorong roket ke atas!</p>
+                    </div>
+                `;
+
+                const canvas = document.getElementById('flappy-canvas');
+                const ctx = canvas.getContext('2d');
+
+                let rocketY = 200;
+                let velocity = 0;
+                const gravity = 0.42;
+                const jumpStrength = -7.2;
+                let pipes = [];
+                let frame = 0;
+                let score = 0;
+                let running = true;
+                let animId = null;
+
+                const flap = (e) => {
+                    if (e && e.type === 'keydown' && e.code !== 'Space') return;
+                    if (e) e.preventDefault();
+                    if (!running) return;
+                    velocity = jumpStrength;
+                    sound.play('jump');
+                };
+
+                canvas.addEventListener('mousedown', flap);
+                canvas.addEventListener('touchstart', flap, { passive: false });
+                window.addEventListener('keydown', flap);
+
+                const loop = () => {
+                    if (!running) return;
+                    frame++;
+
+                    velocity += gravity;
+                    rocketY += velocity;
+
+                    // Spawn Rintangan Asteroid
+                    if (frame % 95 === 0) {
+                        const gap = 125;
+                        const topH = Math.floor(Math.random() * 180) + 50;
+                        pipes.push({ x: canvas.width, topH, gap, passed: false });
+                    }
+
+                    ctx.fillStyle = '#070812';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    // Bintang Latar
+                    ctx.fillStyle = '#ffffff';
+                    for (let s = 0; s < 15; s++) {
+                        ctx.fillRect((s * 73 + frame) % canvas.width, (s * 41) % canvas.height, 2, 2);
+                    }
+
+                    // Update & Gambar Pipa Rintangan
+                    for (let i = pipes.length - 1; i >= 0; i--) {
+                        const p = pipes[i];
+                        p.x -= 2.8;
+
+                        ctx.fillStyle = '#ea580c';
+                        ctx.fillRect(p.x, 0, 46, p.topH);
+                        ctx.fillRect(p.x, p.topH + p.gap, 46, canvas.height - (p.topH + p.gap));
+
+                        // Cek Tabrakan
+                        const rX = 75;
+                        if (rX + 14 > p.x && rX - 14 < p.x + 46) {
+                            if (rocketY - 12 < p.topH || rocketY + 12 > p.topH + p.gap) {
+                                running = false;
+                                app.completeGame(score, 'ROKET MENABRAK!');
+                                return;
+                            }
+                        }
+
+                        if (!p.passed && p.x + 46 < rX) {
+                            p.passed = true;
+                            score += 25;
+                            sound.play('point');
+                            app.setLiveScore(score);
+                        }
+
+                        if (p.x < -60) pipes.splice(i, 1);
+                    }
+
+                    // Cek Batas Atas/Bawah
+                    if (rocketY < 10 || rocketY > canvas.height - 10) {
+                        running = false;
+                        app.completeGame(score, 'ROKET KELUAR JALUR!');
+                        return;
+                    }
+
+                    // Gambar Roket
+                    ctx.font = '28px serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('🚀', 75, rocketY);
+
+                    animId = requestAnimationFrame(loop);
+                };
+
+                animId = requestAnimationFrame(loop);
+
+                return () => {
+                    running = false;
+                    cancelAnimationFrame(animId);
+                    canvas.removeEventListener('mousedown', flap);
+                    canvas.removeEventListener('touchstart', flap);
+                    window.removeEventListener('keydown', flap);
+                };
+            },
+
+            // ------------------------------------------
+            // GAME 10: KETIK CEPAT (SPEED TYPING)
+            // ------------------------------------------
+            typing(stage, app) {
+                const words = [
+                    'nusantara', 'teknologi', 'komputer', 'algoritma', 'bintang',
+                    'petualang', 'kemenangan', 'kecepatan', 'semangat', 'kreatif',
+                    'juara', 'indonesia', 'galaksi', 'roket', 'energi',
+                    'strategi', 'fantasi', 'legenda', 'prestasi', 'cerdas'
+                ];
+                let currentWord = words[Math.floor(Math.random() * words.length)];
+                let score = 0;
+                let timeLeft = 30;
+
+                stage.innerHTML = `
+                    <div class="max-w-md w-full text-center space-y-5">
+                        <div class="flex justify-between items-center bg-slate-900/90 px-4 py-3 rounded-xl border border-emerald-500/30 text-xs">
+                            <span class="text-slate-400">Sisa Waktu: <strong id="type-time" class="text-amber-400 font-arcade text-base">30s</strong></span>
+                            <span class="text-emerald-400 font-bold">+25 Poin / Kata</span>
+                        </div>
+
+                        <div class="p-6 rounded-2xl bg-slate-900 border border-slate-800">
+                            <div class="text-xs text-slate-400 mb-2">Ketik kata di bawah ini:</div>
+                            <div id="type-target" class="font-arcade font-bold text-2xl sm:text-3xl text-cyan-400 tracking-wider">${currentWord}</div>
+                        </div>
+
+                        <input type="text" id="type-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Mulai mengetik..." class="w-full px-4 py-3.5 rounded-xl bg-slate-900 border-2 border-slate-700 focus:border-emerald-400 focus:outline-none text-center font-mono text-lg text-white">
+                    </div>
+                `;
+
+                const input = document.getElementById('type-input');
+                const targetEl = document.getElementById('type-target');
+                input.focus();
+
+                input.oninput = () => {
+                    if (input.value.trim().toLowerCase() === currentWord) {
+                        sound.play('point');
+                        score += 25;
+                        app.setLiveScore(score);
+                        input.value = '';
+                        let next = words[Math.floor(Math.random() * words.length)];
+                        while (next === currentWord) next = words[Math.floor(Math.random() * words.length)];
+                        currentWord = next;
+                        targetEl.textContent = currentWord;
+                    }
+                };
+
+                const timer = setInterval(() => {
+                    timeLeft--;
+                    document.getElementById('type-time').textContent = timeLeft + 's';
+                    if (timeLeft <= 0) {
+                        clearInterval(timer);
+                        input.disabled = true;
+                        app.completeGame(score, 'WAKTU MENGETIK HABIS!');
+                    }
+                }, 1000);
+
+                return () => clearInterval(timer);
+            }
+        };
+
+        // ==========================================
+        // 5. BOOTSTRAP APLIKASI
+        // ==========================================
+        window.app = new ArcadeApp();
+        window.addEventListener('DOMContentLoaded', () => {
+            window.app.init();
+        });
+    </script>
+</body>
+</html>
